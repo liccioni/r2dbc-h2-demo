@@ -57,10 +57,12 @@ jib {
     }
     to {
         image = "ghcr.io/liccioni/$name"
-        tags = [appVersion,"latest"] as List<String>
+        tags = [appVersion, "latest"] as List<String>
+        auth {
+            username = dockerUsername
+            password = dockerPassword
+        }
     }
-    username = dockerUsername
-    password = dockerPassword
 }
 
 task getCurrentVersion {
