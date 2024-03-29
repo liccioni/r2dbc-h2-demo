@@ -57,7 +57,7 @@ jib {
     }
     to {
         image = "ghcr.io/liccioni/$name"
-        tags = [appVersion, "latest"] as List<String>
+        tags = [semver.version, "latest"] as List<String>
         auth {
             username = dockerUsername
             password = dockerPassword
