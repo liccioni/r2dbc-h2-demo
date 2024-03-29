@@ -79,8 +79,8 @@ jobs:
         run: |
           echo "APP_VERSION=$(./gradlew getCurrentVersionNoHash | grep -v -e '^$\|^>\|^BUILD\|^1')" >> $GITHUB_ENV
 
-#      - name: Install flyctl via https://github.com/superfly/flyctl-actions
-#        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Install flyctl via https://github.com/superfly/flyctl-actions
+        uses: superfly/flyctl-actions/setup-flyctl@master
 #
-#      - name: Deploy our Spring Boot app to fly.io
-#        run: flyctl deploy --image ghcr.io/digissance/homie-demo:${{ env.APP_VERSION }}
+      - name: Deploy our Spring Boot app to fly.io
+        run: flyctl deploy --image ghcr.io/liccioni/r2dbc-h2-demo:${{ env.APP_VERSION }}

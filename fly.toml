@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for r2dbc-h2-demo on 2024-03-29T23:24:38+01:00
+# fly.toml app configuration file generated for r2dbc-h2-demo on 2024-03-30T00:01:22+01:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -7,7 +7,7 @@ app = 'r2dbc-h2-demo'
 primary_region = 'otp'
 
 [build]
-  image = 'ghcr.io/net.liccioni/r2dbc-h2-demo:latest'
+  image = 'ghcr.io/liccioni/r2dbc-h2-demo:latest'
 
 [http_service]
   internal_port = 8080
