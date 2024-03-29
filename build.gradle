@@ -1,0 +1,74 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.4'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'com.google.cloud.tools.jib' version '3.4.1'
+    id 'com.github.jmongard.git-semver-plugin' version '0.4.2'
+}
+
+def publishToDocker = Boolean.parseBoolean(System.getenv().getOrDefault('PUBLISH_TO_DOCKER', 'false'))
+def dockerUsername = System.getenv().getOrDefault('DOCKER_USERNAME', 'user')
+def dockerPassword = System.getenv().getOrDefault('DOCKER_PASSWORD', 'pass')
+def appVersion = System.getenv().getOrDefault('APP_VERSION', '0.0.1-SNAPSHOT')
+def gitHash = System.getenv().getOrDefault('GIT_HASH', '123456')
+
+group = 'net.liccioni'
+version = semver.version as String
+
+java {
+    sourceCompatibility = '21'
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-data-r2dbc'
+    implementation 'org.springframework.boot:spring-boot-starter-webflux'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+
+    implementation 'net.datafaker:datafaker:2.1.0'
+
+    compileOnly 'org.projectlombok:lombok'
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+    runtimeOnly 'com.h2database:h2'
+    runtimeOnly 'io.r2dbc:r2dbc-h2'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.projectlombok:lombok'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'io.projectreactor:reactor-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+jib {
+    from {
+        image = "openjdk:23-slim"
+    }
+    to {
+        image = "ghcr.io/$group/$name"
+        tags = [appVersion,"latest"] as List<String>
+    }
+}
+
+task getCurrentVersion {
+    doFirst {
+        println "${semver.version}-$gitHash"
+    }
+}
+
+task getCurrentVersionNoHash {
+    doFirst {
+        println "${semver.version}"
+    }
+}

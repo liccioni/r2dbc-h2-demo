@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: r2dbc-h2-demo
+  threads:
+    virtual:
+      enabled: true
+logging:
+  level:
+    web: debug
