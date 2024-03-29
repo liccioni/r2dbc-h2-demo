@@ -56,7 +56,7 @@ jib {
         image = "openjdk:23-slim"
     }
     to {
-        image = "ghcr.io/$group/$name"
+        image = "ghcr.io/liccioni/$name"
         tags = [appVersion,"latest"] as List<String>
     }
 }
