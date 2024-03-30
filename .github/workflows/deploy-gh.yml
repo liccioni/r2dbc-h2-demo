@@ -23,9 +23,9 @@ concurrency:
 jobs:
   # Single deploy job since we're just deploying  
   deploy:
-    defaults:
-      run:
-        working-directory: ./r2dbc-h2-demo-ui
+#    defaults:
+#      run:
+#        working-directory: ./r2dbc-h2-demo-ui
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -34,7 +34,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set Directory
-        run: ls
+        run: cd ./r2dbc-h2-demo-ui
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
