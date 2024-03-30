@@ -33,14 +33,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+      - name: Set Directory
+        run: cd ./r2dbc-h2-demo-ui
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          working-directory: ./r2dbc-h2-demo-ui
           node-version: 20
           cache: 'npm'
       - name: Install dependencies
-        run: cd ./r2dbc-h2-demo-ui && npm ci
+        run: npm ci
       - name: Build
         run: npm run build
       - name: Setup Pages
