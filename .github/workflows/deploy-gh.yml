@@ -35,8 +35,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Set up Node
         uses: actions/setup-node@v4
-        run: cd ./r2dbc-h2-demo-ui
         with:
+          working-directory: ./r2dbc-h2-demo-ui
           node-version: 20
           cache: 'npm'
       - name: Install dependencies
