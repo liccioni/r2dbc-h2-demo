@@ -4,20 +4,51 @@
 #
 
 app = 'r2dbc-h2-demo'
+kill_signal = "SIGINT"
+kill_timeout = 5
+mounts = []
 primary_region = 'otp'
+processes = []
 
 [build]
   image = 'ghcr.io/liccioni/r2dbc-h2-demo:latest'
 
-[http_service]
+#[http_service]
+#  internal_port = 8080
+#  force_https = true
+#  auto_stop_machines = true
+#  auto_start_machines = true
+#  min_machines_running = 0
+#  processes = ['app']
+#
+#[[vm]]
+#  memory = '1gb'
+#  cpu_kind = 'shared'
+#  cpus = 1
+[[services]]
   internal_port = 8080
-  force_https = true
-  auto_stop_machines = true
-  auto_start_machines = true
-  min_machines_running = 0
-  processes = ['app']
+  processes = ["app"]
+  protocol = "tcp"
+  [services.concurrency]
+    hard_limit = 25
+    soft_limit = 20
+    type = "connections"
 
-[[vm]]
-  memory = '1gb'
-  cpu_kind = 'shared'
-  cpus = 1
+  [[services.ports]]
+    force_https = true
+    handlers = ["http"]
+    port = 80
+
+  [[services.ports]]
+    handlers = ["tls", "http"]
+    port = 443
+
+  [[services.http_checks]]
+    interval = 10000
+    grace_period = "5s"
+    method = "get"
+    path = "/actuator/health/liveness"
+    protocol = "http"
+    restart_limit = 0
+    timeout = 2000
+    tls_skip_verify = false
