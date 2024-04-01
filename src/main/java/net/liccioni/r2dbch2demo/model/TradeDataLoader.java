@@ -45,7 +45,7 @@ public class TradeDataLoader
     {
 //        insertBatch(createTradeData());
         Flux.fromIterable(createTradeData())
-//            .take(100000)
+//            .take(1000)
             .delaySubscription(Duration.of(15, ChronoUnit.SECONDS))
             .flatMap(r2dbcEntityOperations::insert)
             .log()

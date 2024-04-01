@@ -1,10 +1,12 @@
 package net.liccioni.r2dbch2demo.websocket;
 
 import java.io.IOException;
+import java.util.List;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.data.relational.core.query.Query;
 import org.springframework.web.reactive.socket.WebSocketHandler;
@@ -39,10 +41,16 @@ public class ProductWebSocketHandler implements WebSocketHandler
     {
         return session.send(session.receive()
             .map(this::readPage)
-                .log()
+            .log()
             .flatMapSequential(page ->
             {
-                return r2dbcEntityOperations.select(Query.empty()
+                var query = Query.empty();
+                List<Sort.Order> orders = page.getSortModel().stream().map(ProductWebSocketHandler::getOrder).toList();
+                if (!orders.isEmpty())
+                {
+                    query = query.sort(Sort.by(orders));
+                }
+                return r2dbcEntityOperations.select(query
                         .offset(page.getOffset())
                         .limit(page.getLimit()), Trade.class)
                     .log()
@@ -50,6 +58,22 @@ public class ProductWebSocketHandler implements WebSocketHandler
 //                    .concatWith(sink.asFlux()
 //                        .map(p -> session.binaryMessage(dataBufferFactory -> dataBufferFactory.wrap(getProductBytes(p)))));
             }));
+    }
+
+    private static Sort.Order getOrder(final SortModel sortModel)
+    {
+        switch (sortModel.getSort())
+        {
+            case asc ->
+            {
+                return Sort.Order.asc(sortModel.getColId());
+            }
+            case desc ->
+            {
+                return Sort.Order.desc(sortModel.getColId());
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + sortModel.getSort());
+        }
     }
 
     private MyPage readPage(final WebSocketMessage page)

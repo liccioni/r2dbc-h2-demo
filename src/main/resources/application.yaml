@@ -17,3 +17,4 @@ management:
 logging:
   level:
     web: debug
+    io.r2dbc.h2: error

@@ -1,33 +1,57 @@
 'use strict';
 
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {AgGridReact} from '@ag-grid-community/react';
 import {InfiniteRowModelModule} from '@ag-grid-community/infinite-row-model';
+import { SetFilterModule } from '@ag-grid-enterprise/set-filter';
 import '@ag-grid-community/styles/ag-grid.css';
 import "@ag-grid-community/styles/ag-theme-quartz.css";
 
 import {ModuleRegistry} from '@ag-grid-community/core';
 import {getBaseUrl} from './ws.js';
 
-ModuleRegistry.registerModules([InfiniteRowModelModule]);
+ModuleRegistry.registerModules([InfiniteRowModelModule,SetFilterModule]);
 
 export default function Trades() {
 
     const URL_WEB_SOCKET = getBaseUrl();
     
+    const gridRef = useRef();    
+    const [wsClient, setWsClient] = useState(null);
+    const [gridParams, setGridParams] = useState(null);
+    const [trades, setTrades] = useState([]);
     const [tradesMap, setTradesMap] = useState({});
     const [dsParams, setDsParams] = useState(null);
     const containerStyle = useMemo(() => ({width: '100%', height: '100%'}), []);
     const gridStyle = useMemo(() => ({height: '100%', width: '100%'}), []);
 
     const [columnDefs, setColumnDefs] = useState([
-        {field: 'id', minWidth: 150},
+      {
+        headerName: 'ID',
+        maxWidth: 100,
+        valueGetter: 'node.id',
+        cellRenderer: props => {
+            if (props.value !== undefined) {
+                return props.value;
+            } else {
+                return <img src="https://www.ag-grid.com/example-assets/loading.gif" />;
+            }
+        },
+        // we don't want to sort by the row index, this doesn't make sense as the point
+        // of the row index is to know the row index in what came back from the server
+        sortable: false,
+        suppressHeaderMenuButton: true,
+    },        
         {field: 'product', minWidth: 150},
         {field: 'tradeId', minWidth: 150},
         {field: 'portfolio', minWidth: 150},
         {field: 'dealType', minWidth: 150},
-        {field: 'book', minWidth: 150},
-        {field: 'bidType', minWidth: 150},
+        {field: 'book', minWidth: 150},        
+        {
+          field: 'bidType',
+          filter: 'agSetColumnFilter',
+          filterParams: { values: ['Buy', 'Sell'] },
+      },
         {field: 'previousValue', minWidth: 150},
         {field: 'currentValue', minWidth: 150},
     ]);
@@ -35,62 +59,96 @@ export default function Trades() {
         return {
             flex: 1,
             minWidth: 100,
-            sortable: false,
+            // sortable: false,
         }
     }, []);
 
+    const getDatasource = ()=>{
+      return {
+        rowCount: undefined,
+        getRows: getRowData
+    };
+    }
+
+    const getTrades = ()=>{
+      return trades;
+    }
+
+    const getRowData = (params) => {      
+      setDsParams(params);      
+  }
+
+    useEffect(()=>{
+      const wsClient = new WebSocket(URL_WEB_SOCKET);
+      wsClient.onopen = () => {
+          setWsClient(wsClient);
+        };        
+        wsClient.onmessage = async (evt) => {
+          const data = await evt.data.text();
+          const trade = JSON.parse(data);          
+          setTrades(prevTrades => [...prevTrades,trade]);
+          setTradesMap(prevTrades => {
+            prevTrades[trade.id] = trade;
+            return {...prevTrades};
+          });
+      };
+      wsClient.onclose = () => console.log('ws closed');
+      return () => {
+        wsClient.close();
+    };
+    },[]);
+
+    useEffect(()=>{
+      if(wsClient&&gridParams){
+        gridParams.api.setGridOption('datasource', getDatasource());
+      }
+    },[wsClient,gridParams]);
 
     const onGridReady = useCallback((params) => {
-
-        const wsClient = new WebSocket(URL_WEB_SOCKET);
-        wsClient.onopen = () => {
-            const dataSource = {
-                rowCount: undefined,
-                getRows: (params) => {
-                    wsClient.send(JSON.stringify({offset: params.startRow, limit: 100}));
-                    console.log("wsClient.send", params, {offset: params.startRow, limit: 100});
-                    setDsParams(params);
-                }
-            };
-            params.api.setGridOption('datasource', dataSource);
-        };
-        wsClient.onmessage = async (evt) => {
-            const data = await evt.data.text();
-            const trade = JSON.parse(data);
-            setTradesMap(prevTrades => {
-                prevTrades[trade.id] = trade;
-                return {...prevTrades};
-            });
-        };
-        wsClient.onclose = () => console.log('ws closed');
-
-        return () => {
-            wsClient.close();
-        };
+        setGridParams(params);
     }, []);
 
+    const getRowId = useCallback(function (params) {
+      return params.data.id;
+  }, []);
+
     useEffect(() => {
-        if (dsParams != null) {                        
-            const page = Object.values(tradesMap).slice(dsParams.startRow, dsParams.endRow);            
+        if (dsParams != null) {            
+            const page = trades.slice(dsParams.startRow, dsParams.endRow);
+            console.log("useEffect.trades",trades);
+            console.log("useEffect.tradesMap",tradesMap);
             dsParams.successCallback(page, -1);
         }
-    }, [dsParams, tradesMap]);
+    }, [trades]);
+    useEffect(() => {      
+      if(wsClient&&dsParams){        
+        const request = JSON.stringify({offset: dsParams.startRow, limit: 100,sortModel:dsParams.sortModel});
+        wsClient.send(request);
+      }
+  }, [dsParams]);
+
+    const handleSortModelChanged = (event)=>{
+      console.log("rtModelChanged",event);
+    }
 
     return (
         <div style={containerStyle}>
             <div style={gridStyle} className={"ag-theme-quartz"}>
                 <AgGridReact
+                    ref={gridRef}
                     columnDefs={columnDefs}
                     defaultColDef={defaultColDef}
-                    rowBuffer={0}
+                    // rowBuffer={0}
                     rowSelection={'multiple'}
                     rowModelType={'infinite'}
                     cacheBlockSize={100}
                     cacheOverflowSize={2}
-                    maxConcurrentDatasourceRequests={1}
-                    infiniteInitialRowCount={1000}
-                    maxBlocksInCache={10}
+                    maxConcurrentDatasourceRequests={2}
+                    infiniteInitialRowCount={1}
+                    maxBlocksInCache={2}
+                    getRowId={getRowId}
                     onGridReady={onGridReady}
+                    onSortChanged={(event)=>{setTrades([]);setTradesMap({})}}
                 />
             </div>
 
