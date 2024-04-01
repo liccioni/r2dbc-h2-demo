@@ -60,13 +60,10 @@ public class TradeDataLoader
         {
             for (String portfolio : PORTFOLIOS)
             {
-                for (int k = 0; k < numberBetween(10, 2000); k++)
+                for (int k = 0; k < numberBetween(1000, 2000); k++)
                 {
                     String book = createBookName();
-                    for (int l = 0; l < numberBetween(10, 10000); l++)
-                    {
-                        trades.add(createTradeRecord(product, portfolio, book, thisBatch));
-                    }
+                    trades.add(createTradeRecord(product, portfolio, book, thisBatch));
                 }
             }
         }
