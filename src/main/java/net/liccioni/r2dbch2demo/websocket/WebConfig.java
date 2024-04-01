@@ -25,7 +25,6 @@ class WebConfig
                                                            final Flux<Product> productGenerator,
                                                            final ObjectMapper objectMapper)
     {
-        productGenerator.subscribe();
         return new ProductWebSocketHandler(template, productGenerator, objectMapper);
     }
 
@@ -41,16 +40,14 @@ class WebConfig
     public Flux<Product> productGenerator(R2dbcEntityOperations r2dbcEntityOperations)
     {
         Faker faker = new Faker();
-        return Flux.interval(Duration.of(15, ChronoUnit.SECONDS), Duration.of(50, ChronoUnit.MILLIS))
+        return Flux.interval(Duration.of(2, ChronoUnit.SECONDS), Duration.of(20, ChronoUnit.MILLIS))
             .flatMap(tick ->
-                Flux.range(0, 1000)
-                    .flatMap(i ->
-                    {
-                        Product product = new Product();
-                        product.setName(faker.funnyName().name());
-                        product.setPrice(faker.number().randomDouble(2, 1, 10000));
-                        return r2dbcEntityOperations.insert(product);
-                    })).doOnNext(p -> System.out.println("creating product: " + p))
-            .takeUntil(p -> p.getId() > 500000);
+            {
+                Product product = new Product();
+                product.setName(faker.funnyName().name());
+                product.setPrice(faker.number().randomDouble(2, 1, 10000));
+                return r2dbcEntityOperations.insert(product);
+            })
+            .takeUntil(p -> p.getId() > 1000000);
     }
 }

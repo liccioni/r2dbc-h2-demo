@@ -12,14 +12,16 @@ import org.springframework.web.reactive.socket.WebSocketMessage;
 import org.springframework.web.reactive.socket.WebSocketSession;
 
 import net.liccioni.r2dbch2demo.model.Product;
+import net.liccioni.r2dbch2demo.model.Trade;
+import net.liccioni.r2dbch2demo.model.TradeDataLoader;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-import reactor.core.publisher.Sinks;
 
 public class ProductWebSocketHandler implements WebSocketHandler
 {
     private final R2dbcEntityOperations r2dbcEntityOperations;
     private final ObjectMapper objectMapper;
+//    private final Sinks.Many<Product> sink;
 
     public ProductWebSocketHandler(final R2dbcEntityOperations r2dbcEntityOperations,
                                    final Flux<Product> productGenerator,
@@ -27,8 +29,9 @@ public class ProductWebSocketHandler implements WebSocketHandler
     {
         this.r2dbcEntityOperations = r2dbcEntityOperations;
         this.objectMapper = objectMapper;
-        final var sink = Sinks.many().multicast().directBestEffort();
-        productGenerator.subscribe(sink::tryEmitNext);
+//        this.sink = Sinks.many().multicast().directBestEffort();
+//        productGenerator.log().subscribe(this.sink::tryEmitNext);
+        new TradeDataLoader(r2dbcEntityOperations).loadTradeData();
     }
 
     @Override
@@ -36,13 +39,16 @@ public class ProductWebSocketHandler implements WebSocketHandler
     {
         return session.send(session.receive()
             .map(this::readPage)
-            .switchMap(page ->
+                .log()
+            .flatMapSequential(page ->
             {
                 return r2dbcEntityOperations.select(Query.empty()
                         .offset(page.getOffset())
-                        .limit(page.getLimit()), Product.class)
-                    .map(p -> session.binaryMessage(dataBufferFactory -> dataBufferFactory.wrap(getProductBytes(p))));
-//                    .concatWith(sub.map(p -> session.textMessage(p.toString())));
+                        .limit(page.getLimit()), Trade.class)
+                    .log()
+                    .map(p -> session.binaryMessage(dataBufferFactory -> dataBufferFactory.wrap(getBytes(p))));
+//                    .concatWith(sink.asFlux()
+//                        .map(p -> session.binaryMessage(dataBufferFactory -> dataBufferFactory.wrap(getProductBytes(p)))));
             }));
     }
 
@@ -58,7 +64,7 @@ public class ProductWebSocketHandler implements WebSocketHandler
         }
     }
 
-    private byte[] getProductBytes(final Product p)
+    private byte[] getBytes(final Object p)
     {
         try
         {
