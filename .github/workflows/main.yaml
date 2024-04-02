@@ -67,7 +67,7 @@ jobs:
       - name: build image and publish
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: jib
+          arguments: bootBuildImage
 
       - name: Commit release
         run: |
@@ -83,4 +83,4 @@ jobs:
         uses: superfly/flyctl-actions/setup-flyctl@master
 #
       - name: Deploy our Spring Boot app to fly.io
-        run: flyctl deploy --image ghcr.io/liccioni/r2dbc-h2-demo:${{ env.APP_VERSION }}
+        run: flyctl deploy --image ghcr.io/liccioni/r2dbc-h2-demo-graalvm:${{ env.APP_VERSION }}

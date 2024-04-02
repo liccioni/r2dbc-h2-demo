@@ -51,6 +51,28 @@ tasks.named('test') {
     useJUnitPlatform()
 }
 
+bootBuildImage {
+    imageName = "ghcr.io/liccioni/${name}-graalvm"
+    publish = publishToDocker
+    tags = ["ghcr.io/liccioni/${name}-graalvm:${semver.version}"]
+    docker {
+        publishRegistry {
+            username = dockerUsername
+            password = dockerPassword
+        }
+    }
+    buildCache {
+        volume {
+            name = "cache-${rootProject.name}.build"
+        }
+    }
+    launchCache {
+        volume {
+            name = "cache-${rootProject.name}.launch"
+        }
+    }
+}
+
 jib {
     from {
         image = "openjdk:23-slim"
