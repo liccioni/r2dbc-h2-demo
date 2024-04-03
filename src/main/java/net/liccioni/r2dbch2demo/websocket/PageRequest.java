@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class MyPage
+public class PageRequest
 {
     private long offset;
     private int limit;

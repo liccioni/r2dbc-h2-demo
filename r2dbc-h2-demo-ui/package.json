@@ -9,13 +9,15 @@
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
-  "dependencies": {    
-    "@ag-grid-community/client-side-row-model": "~31.2.0",   
-    "@ag-grid-community/infinite-row-model": "~31.2.0",   
+  "dependencies": {
+    "@ag-grid-community/client-side-row-model": "~31.2.0",
+    "@ag-grid-community/infinite-row-model": "~31.2.0",
+    "@ag-grid-enterprise/server-side-row-model": "^31.2.0",
     "@ag-grid-community/react": "~31.2.0",
     "@ag-grid-community/styles": "^31.2.0",
     "@ag-grid-enterprise/row-grouping": "^31.2.0",
     "@ag-grid-enterprise/set-filter": "^31.2.0",
+    "axios": "^1.6.8",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

@@ -6,10 +6,14 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.data.r2dbc.core.R2dbcEntityOperations;
 import org.springframework.web.reactive.HandlerMapping;
+import org.springframework.web.reactive.config.BlockingExecutionConfigurer;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
 import org.springframework.web.reactive.handler.SimpleUrlHandlerMapping;
 import org.springframework.web.reactive.socket.WebSocketHandler;
 
@@ -18,20 +22,27 @@ import net.liccioni.r2dbch2demo.model.Product;
 import reactor.core.publisher.Flux;
 
 @Configuration
-class WebConfig
+class WebConfig implements WebFluxConfigurer
 {
-    @Bean
-    public ProductWebSocketHandler productWebSocketHandler(final R2dbcEntityOperations template,
-                                                           final Flux<Product> productGenerator,
-                                                           final ObjectMapper objectMapper)
+    private final AsyncTaskExecutor executor;
+
+    WebConfig(@Qualifier("applicationTaskExecutor") AsyncTaskExecutor executor)
     {
-        return new ProductWebSocketHandler(template, productGenerator, objectMapper);
+        this.executor = executor;
+    }
+
+    @Bean
+    public QueryTradeWebSocketHandler productWebSocketHandler(final R2dbcEntityOperations template,
+                                                              final Flux<Product> productGenerator,
+                                                              final ObjectMapper objectMapper)
+    {
+        return new QueryTradeWebSocketHandler(template, productGenerator, objectMapper);
     }
 
     @Bean
     public HandlerMapping handlerMapping(final WebSocketHandler productWebSocketHandler)
     {
-        Map<String, WebSocketHandler> map = Map.of("/ws-products", productWebSocketHandler);
+        Map<String, WebSocketHandler> map = Map.of("/ws-trades", productWebSocketHandler);
         int order = -1; // before annotated controllers
         return new SimpleUrlHandlerMapping(map, order);
     }
@@ -49,5 +60,11 @@ class WebConfig
                 return r2dbcEntityOperations.insert(product);
             })
             .takeUntil(p -> p.getId() > 1000000);
+    }
+
+    @Override
+    public void configureBlockingExecution(final BlockingExecutionConfigurer configurer)
+    {
+        configurer.setExecutor(executor);
     }
 }

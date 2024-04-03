@@ -43,10 +43,10 @@ public class TradeDataLoader
 
     public void loadTradeData()
     {
-//        insertBatch(createTradeData());
         Flux.fromIterable(createTradeData())
 //            .take(1000)
             .delaySubscription(Duration.of(15, ChronoUnit.SECONDS))
+//            .delaySubscription(Duration.of(3, ChronoUnit.SECONDS))
             .flatMap(r2dbcEntityOperations::insert)
             .log()
             .subscribe();
